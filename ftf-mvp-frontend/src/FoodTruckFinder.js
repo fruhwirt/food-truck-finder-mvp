@@ -66,7 +66,12 @@ function DateFilter({ onDateChange, currentDate }) {
 function DetailPanel({ schedule }) {
     // (Content of DetailPanel Component... Keep the approved logic and styling)
     if (!schedule) {
-        return ( /* ... empty state UI ... */ )
+        // Line 69: Return a simple, valid JSX element
+        return ( 
+            <div style={{ padding: '20px', textAlign: 'center' }}>
+                Select a truck on the map or from the list to see details.
+            </div>
+        );
     }
     return ( <p>Loading or No Data Available.</p>)
 }
