@@ -68,11 +68,8 @@ function DetailPanel({ schedule }) {
     if (!schedule) {
         return ( /* ... empty state UI ... */ )
     }
-    return (
-        <aside style={{ /* ... your approved panel styling ... */ }}>
-            {/* ... data display and links ... */}
-        </aside>
-    );
+    return ( <p>Loading or No Data Available.</p>)
+    )
 }
 
 // --- 4. VendorForm Component ---
