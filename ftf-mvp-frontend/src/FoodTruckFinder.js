@@ -66,7 +66,7 @@ function DateFilter({ onDateChange, currentDate }) {
 function DetailPanel({ schedule }) {
     // (Content of DetailPanel Component... Keep the approved logic and styling)
     if (!schedule) {
-        return ( /* ... empty state UI ... */ );
+        return ( /* ... empty state UI ... */ )
     }
     return (
         <aside style={{ /* ... your approved panel styling ... */ }}>
