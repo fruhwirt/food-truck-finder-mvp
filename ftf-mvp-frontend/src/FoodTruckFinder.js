@@ -69,7 +69,6 @@ function DetailPanel({ schedule }) {
         return ( /* ... empty state UI ... */ )
     }
     return ( <p>Loading or No Data Available.</p>)
-    )
 }
 
 // --- 4. VendorForm Component ---
