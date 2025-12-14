@@ -1,11 +1,23 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client'; // or 'react-dom' if older version
-import FoodTruckFinder from './FoodTruckFinder'; // Import your main component
+import { createRoot } from 'react-dom/client'; // Notice the /client import
+import './index.css';
+import FoodTruckFinder from './FoodTruckFinder'; // Assuming this is your main component
+import reportWebVitals from './reportWebVitals';
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+// 1. Get the root DOM element
+const container = document.getElementById('root');
 
+// 2. Create the root object using the new API
+const root = createRoot(container); 
+
+// 3. Render your application
 root.render(
   <React.StrictMode>
     <FoodTruckFinder />
   </React.StrictMode>
 );
+
+// If you want to start measuring performance in your app, pass a function
+// to log results (for example: reportWebVitals(console.log))
+// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+reportWebVitals();
