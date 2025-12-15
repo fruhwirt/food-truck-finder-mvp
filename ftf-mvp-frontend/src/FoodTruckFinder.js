@@ -34,24 +34,26 @@ const fetchSchedules = async (date) => {
 // --- 1. SimpleMap Component (MOCK MAP) ---
 // Note: This is the stylized, mock map component...
 const SimpleMap = ({ schedules, onMarkerClick, selectedId }) => {
-    // FIX: Add minHeight and a background color so you can see it!
+    // FIX: Set a minimum height and background color to make it visible
     return (
         <div 
             style={{ 
                 height: '100%', 
-                minHeight: '500px', // <-- Ensure a minimum height is set
-                backgroundColor: '#f0f0f0', // <-- Add a color to see the space
-                border: selectedId ? '2px solid #007bff' : '1px solid #ccc',
-                transition: 'border 0.3s'
+                minHeight: '500px', // <-- Force a visible height
+                backgroundColor: '#f0f0f0', // <-- Make it gray so you can see it
+                border: '1px solid #ccc', // Add border for clarity
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center'
             }}
         >
-            <p style={{ textAlign: 'center', paddingTop: '180px', color: '#333' }}>
-                Map Area Placeholder (Content will go here)
+            <p style={{ color: '#666' }}>
+                Map Area Placeholder (Ready for Google Maps Integration)
             </p>
-            {/* You could optionally render mock markers here */}
         </div>
     );
 };
+
 
 // --- 2. DateFilter Component ---
 function DateFilter({ onDateChange, currentDate }) {
