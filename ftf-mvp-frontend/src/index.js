@@ -1,7 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-// FIX: Import the correct component name (FoodTruckFinder)
-import FoodTruckFinder from './FoodTruckFinder'; 
+import App from './App';  // ✅ Import App.js instead of FoodTruckFinder.js
+import './index.css';
 
 const container = document.getElementById('root');
 
