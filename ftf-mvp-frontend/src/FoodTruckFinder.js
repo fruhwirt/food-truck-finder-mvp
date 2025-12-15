@@ -32,17 +32,26 @@ const fetchSchedules = async (date) => {
 
 
 // --- 1. SimpleMap Component (MOCK MAP) ---
-// Note: This is the stylized, mock map component. Once the project is running,
-// you will replace this with a Google Maps integration component that uses real Lat/Long.
-function SimpleMap({ schedules, onMarkerClick, selectedId }) {
-    // (Content of SimpleMap Component... Keep this for the prototype look until Google Maps is integrated)
-    // NOTE: This component is long, so we trust you to copy the previously approved stylized content here.
+// Note: This is the stylized, mock map component...
+const SimpleMap = ({ schedules, onMarkerClick, selectedId }) => {
+    // FIX: Add minHeight and a background color so you can see it!
     return (
-        <div style={{ /* ... your approved map styling ... */ }}>
-             {/* ... markers ... */}
+        <div 
+            style={{ 
+                height: '100%', 
+                minHeight: '500px', // <-- Ensure a minimum height is set
+                backgroundColor: '#f0f0f0', // <-- Add a color to see the space
+                border: selectedId ? '2px solid #007bff' : '1px solid #ccc',
+                transition: 'border 0.3s'
+            }}
+        >
+            <p style={{ textAlign: 'center', paddingTop: '180px', color: '#333' }}>
+                Map Area Placeholder (Content will go here)
+            </p>
+            {/* You could optionally render mock markers here */}
         </div>
-    )
-}
+    );
+};
 
 // --- 2. DateFilter Component ---
 function DateFilter({ onDateChange, currentDate }) {
