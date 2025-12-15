@@ -10,6 +10,6 @@ const root = createRoot(container);
 // 2. Render your application
 root.render(
   <React.StrictMode>
-    <FoodTruckFinder />
+    <App /> {/*Render updated app */}
   </React.StrictMode>
 );
