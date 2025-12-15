@@ -1,20 +1,13 @@
+// New/Correct React 18 style
 import React from 'react';
 import { createRoot } from 'react-dom/client'; // Notice the /client import
-import FoodTruckFinder from './FoodTruckFinder'; // Assuming this is your main component
+import App from './App'; // Or whatever your main component is
 
-// 1. Get the root DOM element
 const container = document.getElementById('root');
+const root = createRoot(container); // Create the root object
 
-// 2. Create the root object using the new API
-const root = createRoot(container); 
-
-// 3. Render your application
-root.render(
+root.render( // Render the application
   <React.StrictMode>
-    <FoodTruckFinder />
+    <App />
   </React.StrictMode>
 );
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
