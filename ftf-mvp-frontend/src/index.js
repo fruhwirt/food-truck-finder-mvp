@@ -1,13 +1,16 @@
-// New/Correct React 18 style
 import React from 'react';
-import { createRoot } from 'react-dom/client'; // Notice the /client import
-import App from './App'; // Or whatever your main component is
+import { createRoot } from 'react-dom/client';
+// FIX: Import the correct component name (FoodTruckFinder)
+import FoodTruckFinder from './FoodTruckFinder'; 
 
 const container = document.getElementById('root');
-const root = createRoot(container); // Create the root object
 
-root.render( // Render the application
+// 1. Create the root object using the new React 18 API
+const root = createRoot(container); 
+
+// 2. Render your application
+root.render(
   <React.StrictMode>
-    <App />
+    <FoodTruckFinder />
   </React.StrictMode>
 );
