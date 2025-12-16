@@ -17,6 +17,9 @@ db.connect().catch(err => {
 // Initialize Google Maps Client for Geocoding
 const mapsClient = new MapsClient({});
 const MAPS_API_KEY = process.env.GOOGLE_GEOCODING_KEY;
+const mapsClient = new MapsClient({
+    key: MAPS_API_KEY // <--- THIS IS THE MISSING PIECE!
+});
 
 
 // Helper function to get today's date in YYYY-MM-DD format
