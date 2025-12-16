@@ -3,7 +3,9 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import MapDisplay from './components/MapDisplay';
 import DateFilter from './components/DateFilter';
+import VendorForm from './components/VendorForm'; // 1. IMPORT
 import DetailPanel from './components/DetailPanel';
+import { Plus } from 'lucide-react';
 
 const formatDate = (date) => {
     const d = new Date(date);
@@ -19,6 +21,7 @@ function App() {
     const [selectedSchedule, setSelectedSchedule] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [showVendorForm, setShowVendorForm] = useState(false); // 2. ADD STATE
 
     const fetchSchedules = async (date) => {
         setLoading(true);
@@ -48,6 +51,16 @@ function App() {
             setLoading(false);
         }
     };
+
+// --- [START] HANDLER FOR NEW SCHEDULE ---
+    const handleScheduleAdded = (newSchedule) => {
+        // If the new schedule is for the currently viewed date, add it to the list
+        if (formatDate(new Date(newSchedule.date)) === formatDate(selectedDate)) {
+            setSchedules(prev => [...prev, newSchedule]);
+        }
+        setShowVendorForm(false); // Close the form
+    };
+    // --- [END] HANDLER FOR NEW SCHEDULE ---
 
     useEffect(() => {
         fetchSchedules(selectedDate);
@@ -88,6 +101,14 @@ function App() {
                     </>
                 )}
             </main>
+            
+	    {/* 4. VENDOR FORM MODAL */}
+            {showVendorForm && (
+                <VendorForm
+                    onScheduleAdded={handleScheduleAdded}
+                    onClose={() => setShowVendorForm(false)}
+                />
+            )}
         </div>
     );
 }
