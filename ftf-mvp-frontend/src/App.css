@@ -337,3 +337,38 @@ body {
     padding: 0.5rem 1rem;
     font-size: 1rem;
 }
+
+/* The Nifty Truck Pin */
+.custom-truck-pin {
+  position: absolute;
+  transform: translate(-50%, -100%); /* Centers the pin over the coordinate */
+  background-color: #667eea; /* Purple */
+  color: white;
+  padding: 8px;
+  border-radius: 50% 50% 50% 0; /* Creates a teardrop shape */
+  transform: translate(-50%, -100%) rotate(-45deg); 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid white;
+}
+
+/* Fix the icon rotation inside the tilted pin */
+.custom-truck-pin svg {
+  transform: rotate(45deg);
+}
+
+/* Color change when selected */
+.custom-truck-pin.selected {
+  background-color: #4ade80; /* Bright Green */
+  scale: 1.2;
+  z-index: 10;
+}
+
+.custom-truck-pin:hover {
+  background-color: #4ade80;
+  transform: translate(-50%, -110%) rotate(-45deg);
+}
