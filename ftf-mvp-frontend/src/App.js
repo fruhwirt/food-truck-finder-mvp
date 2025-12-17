@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import MapDisplay from './components/MapDisplay';
 import DateFilter from './components/DateFilter';
-import VendorForm from './components/VendorForm'; // 1. IMPORT
+import VendorForm from './components/VendorForm';
 import DetailPanel from './components/DetailPanel';
 import { Plus } from 'lucide-react';
 
@@ -21,7 +21,7 @@ function App() {
     const [selectedSchedule, setSelectedSchedule] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [showVendorForm, setShowVendorForm] = useState(false); // 2. ADD STATE
+    const [showVendorForm, setShowVendorForm] = useState(false);
 
     const fetchSchedules = async (date) => {
         setLoading(true);
@@ -29,11 +29,8 @@ function App() {
         setSelectedSchedule(null);
 
         const dateString = formatDate(date);
-        // Use environment variable for API URL
         const apiUrl = process.env.REACT_APP_API_URL || '/api/v1';
         const endpoint = `${apiUrl}/schedules?date=${dateString}`;
-
-        console.log('Fetching from:', endpoint);
 
         try {
             const response = await fetch(endpoint);
@@ -41,7 +38,6 @@ function App() {
                 throw new Error(`API fetch failed with status: ${response.status}`);
             }
             const data = await response.json();
-            console.log('Fetched schedules:', data);
             setSchedules(data);
         } catch (err) {
             console.error('Fetch Error:', err);
@@ -52,15 +48,12 @@ function App() {
         }
     };
 
-// --- [START] HANDLER FOR NEW SCHEDULE ---
     const handleScheduleAdded = (newSchedule) => {
-        // If the new schedule is for the currently viewed date, add it to the list
         if (formatDate(new Date(newSchedule.date)) === formatDate(selectedDate)) {
             setSchedules(prev => [...prev, newSchedule]);
         }
-        setShowVendorForm(false); // Close the form
+        setShowVendorForm(false);
     };
-    // --- [END] HANDLER FOR NEW SCHEDULE ---
 
     useEffect(() => {
         fetchSchedules(selectedDate);
@@ -78,7 +71,26 @@ function App() {
         <div className="app-container">
             <header className="app-header">
                 <h1>🚚 Food Truck Finder</h1>
-                <DateFilter onDateChange={handleDateChange} currentDate={selectedDate} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <DateFilter onDateChange={handleDateChange} currentDate={selectedDate} />
+                    <button 
+                        className="add-truck-button"
+                        onClick={() => setShowVendorForm(true)}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            backgroundColor: '#4ade80',
+                            color: 'white',
+                            border: 'none',
+                            padding: '10px 16px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontWeight: '600'
+                        }}
+                    >
+                        <Plus size={18} style={{ marginRight: '6px' }} /> Add Your Truck
+                    </button>
+                </div>
             </header>
 
             <main className="main-content">
@@ -102,7 +114,6 @@ function App() {
                 )}
             </main>
             
-	    {/* 4. VENDOR FORM MODAL */}
             {showVendorForm && (
                 <VendorForm
                     onScheduleAdded={handleScheduleAdded}
