@@ -36,7 +36,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // API Routes
-app.use('/api/v1', scheduleRouter); 
+app.use('/api/v1/schedules', scheduleRouter); 
 
 // Start the server
 app.listen(PORT, () => {
