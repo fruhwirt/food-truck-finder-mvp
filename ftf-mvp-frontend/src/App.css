@@ -337,7 +337,9 @@ body {
     padding: 0.5rem 1rem;
     font-size: 1rem;
 }
-
+/* =============================================
+   UI UPDATES: NIFTY PINS & DATE NAV
+   ============================================= */
 /* The Nifty Truck Pin */
 .custom-truck-pin {
   position: absolute;
@@ -371,4 +373,32 @@ body {
 .custom-truck-pin:hover {
   background-color: #4ade80;
   transform: translate(-50%, -110%) rotate(-45deg);
+}
+
+/* Custom Truck Pin Shape */
+.custom-truck-pin {
+  position: absolute;
+  transform: translate(-50%, -100%) rotate(-45deg);
+  background: #667eea;
+  padding: 8px;
+  border-radius: 50% 50% 50% 0;
+  border: 2px solid white;
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: all 0.2s ease;
+}
+
+.custom-truck-pin svg {
+  transform: rotate(45deg); /* Counter-rotate the icon so it stays upright */
+}
+
+.custom-truck-pin.selected {
+  background: #4ade80;
+  z-index: 100;
+  transform: translate(-50%, -100%) rotate(-45deg) scale(1.2);
+}
+
+.date-nav-btn:hover {
+  background: rgba(255,255,255,0.4) !important;
 }

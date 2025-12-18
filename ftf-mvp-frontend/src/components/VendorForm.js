@@ -1,7 +1,7 @@
 // src/components/VendorForm.js
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import DatePicker from 'react-datepicker';
-import { X, Save, Truck } from 'lucide-react';
+import { X, Save, Truck, Plus, Copy, CalendarDays, Trash2 } from 'lucide-react';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api/v1';
 
@@ -47,41 +47,56 @@ const formatDateForAPI = (date) => {
 };
 
 function VendorForm({ onScheduleAdded, onClose }) {
-    const [formData, setFormData] = useState({
+    // Now managing an ARRAY of entries
+    const [entries, setEntries] = useState([{
         title: '',
         date: new Date(),
         time: '11:00 AM - 2:00 PM',
         location: '',
         social_link: '',
         menu_link: '',
-    });
+    }]);
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
 
-    // 2. AUTO-POPULATE LOGIC
-    useEffect(() => {
-        const match = Object.keys(TRUCK_DIRECTORY).find(
-            key => key.toLowerCase() === formData.title.toLowerCase()
-        );
+    // Update specific field for a specific entry
+    const updateEntry = (index, name, value) => {
+        const newEntries = [...entries];
+        newEntries[index][name] = value;
 
-        if (match) {
-            setFormData(prev => ({
-                ...prev,
-                // Only fill if current field is empty to avoid overwriting manual changes
-                social_link: prev.social_link || TRUCK_DIRECTORY[match].social,
-                menu_link: prev.menu_link || TRUCK_DIRECTORY[match].menu
-            }));
+        // Auto-populate logic integrated directly here
+        if (name === 'title') {
+            const match = Object.keys(TRUCK_DIRECTORY).find(
+                key => key.toLowerCase() === value.toLowerCase()
+            );
+            if (match) {
+                newEntries[index].social_link = TRUCK_DIRECTORY[match].social;
+                newEntries[index].menu_link = TRUCK_DIRECTORY[match].menu;
+            }
         }
-    }, [formData.title]);
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        setEntries(newEntries);
     };
 
-    const handleDateChange = (date) => {
-        setFormData(prev => ({ ...prev, date }));
+    // CLONE: Copies entry to a new row and adds 1 day
+    const duplicateEntry = (index) => {
+        const entryToCopy = { ...entries[index] };
+        const nextDate = new Date(entryToCopy.date);
+        nextDate.setDate(nextDate.getDate() + 1);
+        setEntries([...entries, { ...entryToCopy, date: nextDate }]);
+    };
+
+    // WEEKLY: Copies entry to a new row and adds 7 days
+    const repeatWeekly = (index) => {
+        const entryToCopy = { ...entries[index] };
+        const nextWeekDate = new Date(entryToCopy.date);
+        nextWeekDate.setDate(nextWeekDate.getDate() + 7);
+        setEntries([...entries, { ...entryToCopy, date: nextWeekDate }]);
+    };
+
+    const removeEntry = (index) => {
+        setEntries(entries.filter((_, i) => i !== index));
     };
 
     const handleSubmit = async (e) => {
@@ -89,121 +104,146 @@ function VendorForm({ onScheduleAdded, onClose }) {
         setLoading(true);
         setError(null);
 
-        const payload = {
-            ...formData,
-            date: formatDateForAPI(formData.date), 
-            menu_link: formData.menu_link || null
-        };
-        
-        try {
-            const response = await fetch(`${API_BASE_URL}/schedules`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
+        let successCount = 0;
 
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Failed to add schedule.');
+        // Loop through all entries and POST them one by one
+        for (const entry of entries) {
+            const payload = {
+                ...entry,
+                date: formatDateForAPI(entry.date),
+                menu_link: entry.menu_link || null
+            };
 
+            try {
+                const response = await fetch(`${API_BASE_URL}/schedules`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+
+                if (response.ok) successCount++;
+            } catch (err) {
+                console.error("Submission error:", err);
+            }
+        }
+
+        if (successCount > 0) {
             setSuccess(true);
-            onScheduleAdded(data);
+            onScheduleAdded();
             setTimeout(onClose, 1500);
-        } catch (err) {
-            setError(err.message);
-        } finally {
+        } else {
+            setError("Failed to add schedules. Please check your connection.");
             setLoading(false);
         }
     };
 
     return (
         <div className="modal-backdrop">
-            <div className="modal-content vendor-form-modal">
+            <div className="modal-content vendor-form-modal" style={{ maxWidth: '700px', width: '95%', maxHeight: '90vh' }}>
                 <button className="modal-close-button" onClick={onClose} disabled={loading}>
                     <X size={24} />
                 </button>
                 
-                <h2><Truck size={24} style={{ marginRight: '8px' }}/> Add Your Truck Schedule</h2>
+                <h2><Truck size={24} style={{ marginRight: '8px' }}/> Schedule Builder</h2>
                 
-                <form onSubmit={handleSubmit}>
-                    <label>Truck Name</label>
-                    <input
-                        type="text"
-                        name="title"
-                        list="truck-list" // Link to the datalist below
-                        value={formData.title}
-                        onChange={handleChange}
-                        autoComplete="off"
-                        required
-                    />
-                    {/* 3. AUTOCOMPLETE LIST */}
-                    <datalist id="truck-list">
-                        {Object.keys(TRUCK_DIRECTORY).map(name => (
-                            <option key={name} value={name} />
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                    <div style={{ flex: 1, overflowY: 'auto', padding: '5px' }}>
+                        {entries.map((entry, index) => (
+                            <div key={index} className="entry-card" style={{ border: '1px solid #eee', padding: '15px', borderRadius: '8px', marginBottom: '20px', backgroundColor: '#fdfdfd' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                                    <span style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Day #{index + 1}</span>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button type="button" onClick={() => duplicateEntry(index)} title="Clone to next day" style={{ padding: '4px 8px', fontSize: '0.7rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            <Copy size={14} /> +1 Day
+                                        </button>
+                                        <button type="button" onClick={() => repeatWeekly(index)} title="Repeat next week" style={{ padding: '4px 8px', fontSize: '0.7rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            <CalendarDays size={14} /> +7 Days
+                                        </button>
+                                        {entries.length > 1 && (
+                                            <button type="button" onClick={() => removeEntry(index)} style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}>
+                                                <Trash2 size={16} />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <label>Truck Name</label>
+                                <input
+                                    type="text"
+                                    list="truck-list"
+                                    value={entry.title}
+                                    onChange={(e) => updateEntry(index, 'title', e.target.value)}
+                                    autoComplete="off"
+                                    required
+                                />
+
+                                <label>Full Location Address</label>
+                                <input
+                                    type="text"
+                                    value={entry.location}
+                                    onChange={(e) => updateEntry(index, 'location', e.target.value)}
+                                    placeholder="e.g., 1509 Pioneer Ave, Cheyenne, WY 82001"
+                                    required
+                                />
+
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label>Date</label>
+                                        <DatePicker
+                                            selected={entry.date}
+                                            onChange={(date) => updateEntry(index, 'date', date)}
+                                            dateFormat="MMMM d, yyyy"
+                                            className="date-picker-input"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Time Window</label>
+                                        <input
+                                            type="text"
+                                            value={entry.time}
+                                            onChange={(e) => updateEntry(index, 'time', e.target.value)}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                                
+                                <div className="form-row" style={{ marginTop: '10px' }}>
+                                    <div className="form-group">
+                                        <label>Social Link</label>
+                                        <input type="url" value={entry.social_link} onChange={(e) => updateEntry(index, 'social_link', e.target.value)} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Menu Link</label>
+                                        <input type="url" value={entry.menu_link} onChange={(e) => updateEntry(index, 'menu_link', e.target.value)} />
+                                    </div>
+                                </div>
+                            </div>
                         ))}
-                    </datalist>
 
-                    <label>Full Location Address</label>
-                    <input
-                        type="text"
-                        name="location"
-                        value={formData.location}
-                        onChange={handleChange}
-                        placeholder="e.g., 500 Capitol Ave, Cheyenne, WY 82001"
-                        required
-                    />
-
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label>Date</label>
-                            <DatePicker
-                                selected={formData.date}
-                                onChange={handleDateChange}
-                                dateFormat="MMMM d, yyyy"
-                                minDate={new Date()}
-                                className="date-picker-input"
-                                required
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>Time Window</label>
-                            <input
-                                type="text"
-                                name="time"
-                                value={formData.time}
-                                onChange={handleChange}
-                                required
-                            />
-                        </div>
+                        <button type="button" onClick={() => setEntries([...entries, { title: '', date: new Date(), time: '11:00 AM - 2:00 PM', location: '', social_link: '', menu_link: '' }])} style={{ width: '100%', padding: '10px', border: '2px dashed #ddd', background: 'none', borderRadius: '8px', cursor: 'pointer', marginBottom: '20px' }}>
+                            <Plus size={18} style={{ marginRight: '8px', verticalAlign: 'middle' }} /> Add Blank Day
+                        </button>
                     </div>
-                    
-                    <label>Social Media Link</label>
-                    <input
-                        type="url"
-                        name="social_link"
-                        value={formData.social_link}
-                        onChange={handleChange}
-                        placeholder="https://facebook.com/truckpage"
-                        required
-                    />
 
-                    <label>Menu Link (Optional)</label>
-                    <input
-                        type="url"
-                        name="menu_link"
-                        value={formData.menu_link}
-                        onChange={handleChange}
-                    />
+                    <div style={{ paddingTop: '10px', borderTop: '1px solid #eee' }}>
+                        {loading && <p className="status-message">Saving {entries.length} schedules...</p>}
+                        {error && <p className="status-message error">{error}</p>}
+                        {success && <p className="status-message success">All schedules added!</p>}
 
-                    {loading && <p className="status-message">Saving & Geocoding...</p>}
-                    {error && <p className="status-message error">{error}</p>}
-                    {success && <p className="status-message success">Schedule added!</p>}
-
-                    <button type="submit" className="button submit-button" disabled={loading || success}>
-                        <Save size={18} style={{ marginRight: '8px' }}/> 
-                        {loading ? 'Submitting...' : 'Save Schedule'}
-                    </button>
+                        <button type="submit" className="button submit-button" disabled={loading || success}>
+                            <Save size={18} style={{ marginRight: '8px' }}/> 
+                            {loading ? 'Submitting...' : `Publish ${entries.length} Schedules`}
+                        </button>
+                    </div>
                 </form>
             </div>
+            
+            <datalist id="truck-list">
+                {Object.keys(TRUCK_DIRECTORY).map(name => (
+                    <option key={name} value={name} />
+                ))}
+            </datalist>
         </div>
     );
 }
