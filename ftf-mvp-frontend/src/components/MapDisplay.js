@@ -16,6 +16,7 @@ const containerStyle = {
 const mapOptions = {
     disableDefaultUI: true,
     zoomControl: true,
+    clickableIcons: false, 
 };
 
 function MapDisplay({ schedules, onMarkerClick, selectedId }) {
