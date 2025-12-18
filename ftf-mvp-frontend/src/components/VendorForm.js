@@ -1,76 +1,36 @@
 // src/components/VendorForm.js
 import React, { useState } from 'react';
 import DatePicker from 'react-datepicker';
-import { X, Save, Truck, Plus, Copy, CalendarDays, Trash2 } from 'lucide-react';
+import { X, Save, Truck, Plus, Copy, CalendarDays, Trash2, CheckCircle } from 'lucide-react';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api/v1';
 
-// 1. MASTER TRUCK DICTIONARY (Auto-fills your links)
 const TRUCK_DIRECTORY = {
-    "Double Dubs": {
-        social: "https://www.facebook.com/WWDoubleDubs/",
-        menu: "https://www.facebook.com/WWDoubleDubs/menu"
-    },
-    "Tia's Mexican Food": {
-        social: "https://www.facebook.com/TiasMexicanFood/",
-        menu: ""
-    },
-    "Queso's Mexican Food": {
-        social: "https://www.facebook.com/quesosmexicanfood/",
-        menu: ""
-    },
-    "Crāv-A-Bowl": {
-        social: "https://www.facebook.com/CravABowl",
-        menu: "https://www.feedyourcrav.com/menu"
-    },
-    "Bangkok Bites": {
-        social: "https://www.facebook.com/BangkokBitesCheyenne",
-        menu: "https://www.bangkokbitescheyenne.com/order"
-    },
-    "Nay & Jays": {
-        social: "https://www.facebook.com/nayandjays",
-        menu: ""
-    },
-    "The Florista": {
-        social: "https://www.facebook.com/thefloristacheyenne",
-        menu: ""
-    }
+    "Double Dubs": { social: "https://facebook.com/WWDoubleDubs/", menu: "https://facebook.com/WWDoubleDubs/menu" },
+    "Tia's Mexican Food": { social: "https://facebook.com/TiasMexicanFood/", menu: "" },
+    "Crāv-A-Bowl": { social: "https://facebook.com/CravABowl", menu: "https://feedyourcrav.com/menu" },
+    "Bangkok Bites": { social: "https://facebook.com/BangkokBitesCheyenne", menu: "https://bangkokbitescheyenne.com/order" }
 };
 
 const formatDateForAPI = (date) => {
     if (!date) return '';
     const d = new Date(date);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
 function VendorForm({ onScheduleAdded, onClose }) {
-    // Now managing an ARRAY of entries
     const [entries, setEntries] = useState([{
-        title: '',
-        date: new Date(),
-        time: '11:00 AM - 2:00 PM',
-        location: '',
-        social_link: '',
-        menu_link: '',
+        title: '', date: new Date(), time: '11:00 AM - 2:00 PM', location: '', social_link: '', menu_link: '', saved: false
     }]);
-
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [success, setSuccess] = useState(false);
 
-    // Update specific field for a specific entry
     const updateEntry = (index, name, value) => {
         const newEntries = [...entries];
         newEntries[index][name] = value;
+        newEntries[index].saved = false; // Mark as unsaved if changed
 
-        // Auto-populate logic integrated directly here
         if (name === 'title') {
-            const match = Object.keys(TRUCK_DIRECTORY).find(
-                key => key.toLowerCase() === value.toLowerCase()
-            );
+            const match = Object.keys(TRUCK_DIRECTORY).find(k => k.toLowerCase() === value.toLowerCase());
             if (match) {
                 newEntries[index].social_link = TRUCK_DIRECTORY[match].social;
                 newEntries[index].menu_link = TRUCK_DIRECTORY[match].menu;
@@ -79,171 +39,104 @@ function VendorForm({ onScheduleAdded, onClose }) {
         setEntries(newEntries);
     };
 
-    // CLONE: Copies entry to a new row and adds 1 day
-    const duplicateEntry = (index) => {
-        const entryToCopy = { ...entries[index] };
+    // SAVE SINGLE ROW
+    const saveSingleRow = async (index) => {
+        const entry = entries[index];
+        const payload = { ...entry, date: formatDateForAPI(entry.date) };
+        
+        try {
+            const res = await fetch(`${API_BASE_URL}/schedules`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            if (res.ok) {
+                const newEntries = [...entries];
+                newEntries[index].saved = true;
+                setEntries(newEntries);
+                onScheduleAdded();
+            }
+        } catch (err) { console.error(err); }
+    };
+
+    const duplicateEntry = (index, days) => {
+        const entryToCopy = { ...entries[index], saved: false };
         const nextDate = new Date(entryToCopy.date);
-        nextDate.setDate(nextDate.getDate() + 1);
+        nextDate.setDate(nextDate.getDate() + days);
         setEntries([...entries, { ...entryToCopy, date: nextDate }]);
     };
 
-    // WEEKLY: Copies entry to a new row and adds 7 days
-    const repeatWeekly = (index) => {
-        const entryToCopy = { ...entries[index] };
-        const nextWeekDate = new Date(entryToCopy.date);
-        nextWeekDate.setDate(nextWeekDate.getDate() + 7);
-        setEntries([...entries, { ...entryToCopy, date: nextWeekDate }]);
-    };
-
-    const removeEntry = (index) => {
-        setEntries(entries.filter((_, i) => i !== index));
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setError(null);
-
-        let successCount = 0;
-
-        // Loop through all entries and POST them one by one
-        for (const entry of entries) {
-            const payload = {
-                ...entry,
-                date: formatDateForAPI(entry.date),
-                menu_link: entry.menu_link || null
-            };
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/schedules`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
-                });
-
-                if (response.ok) successCount++;
-            } catch (err) {
-                console.error("Submission error:", err);
-            }
-        }
-
-        if (successCount > 0) {
-            setSuccess(true);
-            onScheduleAdded();
-            setTimeout(onClose, 1500);
-        } else {
-            setError("Failed to add schedules. Please check your connection.");
-            setLoading(false);
-        }
-    };
+    const removeEntry = (index) => setEntries(entries.filter((_, i) => i !== index));
 
     return (
         <div className="modal-backdrop">
-            <div className="modal-content vendor-form-modal" style={{ maxWidth: '700px', width: '95%', maxHeight: '90vh' }}>
-                <button className="modal-close-button" onClick={onClose} disabled={loading}>
-                    <X size={24} />
-                </button>
-                
-                <h2><Truck size={24} style={{ marginRight: '8px' }}/> Schedule Builder</h2>
-                
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                    <div style={{ flex: 1, overflowY: 'auto', padding: '5px' }}>
-                        {entries.map((entry, index) => (
-                            <div key={index} className="entry-card" style={{ border: '1px solid #eee', padding: '15px', borderRadius: '8px', marginBottom: '20px', backgroundColor: '#fdfdfd' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                                    <span style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Day #{index + 1}</span>
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        <button type="button" onClick={() => duplicateEntry(index)} title="Clone to next day" style={{ padding: '4px 8px', fontSize: '0.7rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                            <Copy size={14} /> +1 Day
-                                        </button>
-                                        <button type="button" onClick={() => repeatWeekly(index)} title="Repeat next week" style={{ padding: '4px 8px', fontSize: '0.7rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                            <CalendarDays size={14} /> +7 Days
-                                        </button>
-                                        {entries.length > 1 && (
-                                            <button type="button" onClick={() => removeEntry(index)} style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}>
-                                                <Trash2 size={16} />
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
+            <div className="modal-content vendor-form-modal" style={{ maxWidth: '900px', width: '98%', padding: '0' }}>
+                {/* Header */}
+                <div style={{ padding: '20px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h2 style={{ margin: 0, fontSize: '1.2rem' }}><Truck size={20} /> Bulk Schedule Builder</h2>
+                    <button onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer' }}><X size={24} /></button>
+                </div>
 
-                                <label>Truck Name</label>
-                                <input
-                                    type="text"
-                                    list="truck-list"
-                                    value={entry.title}
-                                    onChange={(e) => updateEntry(index, 'title', e.target.value)}
-                                    autoComplete="off"
-                                    required
-                                />
-
-                                <label>Full Location Address</label>
-                                <input
-                                    type="text"
-                                    value={entry.location}
-                                    onChange={(e) => updateEntry(index, 'location', e.target.value)}
-                                    placeholder="e.g., 1509 Pioneer Ave, Cheyenne, WY 82001"
-                                    required
-                                />
-
-                                <div className="form-row">
-                                    <div className="form-group">
-                                        <label>Date</label>
-                                        <DatePicker
-                                            selected={entry.date}
-                                            onChange={(date) => updateEntry(index, 'date', date)}
-                                            dateFormat="MMMM d, yyyy"
-                                            className="date-picker-input"
-                                            required
-                                        />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Time Window</label>
-                                        <input
-                                            type="text"
-                                            value={entry.time}
-                                            onChange={(e) => updateEntry(index, 'time', e.target.value)}
-                                            required
-                                        />
-                                    </div>
-                                </div>
-                                
-                                <div className="form-row" style={{ marginTop: '10px' }}>
-                                    <div className="form-group">
-                                        <label>Social Link</label>
-                                        <input type="url" value={entry.social_link} onChange={(e) => updateEntry(index, 'social_link', e.target.value)} />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Menu Link</label>
-                                        <input type="url" value={entry.menu_link} onChange={(e) => updateEntry(index, 'menu_link', e.target.value)} />
-                                    </div>
-                                </div>
+                {/* SCROLLABLE LIST AREA */}
+                <div style={{ maxHeight: '60vh', overflowY: 'auto', padding: '20px', backgroundColor: '#fcfcfc' }}>
+                    {entries.map((entry, index) => (
+                        <div key={index} style={{ 
+                            display: 'flex', gap: '10px', alignItems: 'flex-end', 
+                            backgroundColor: 'white', padding: '15px', borderRadius: '8px', 
+                            border: entry.saved ? '1px solid #4ade80' : '1px solid #ddd',
+                            marginBottom: '10px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                        }}>
+                            <div style={{ flex: 2 }}>
+                                <label style={{ fontSize: '11px', textTransform: 'uppercase', color: '#888' }}>Truck</label>
+                                <input list="truck-list" value={entry.title} onChange={(e) => updateEntry(index, 'title', e.target.value)} placeholder="Name" />
                             </div>
-                        ))}
+                            
+                            <div style={{ flex: 3 }}>
+                                <label style={{ fontSize: '11px', textTransform: 'uppercase', color: '#888' }}>Address</label>
+                                <input value={entry.location} onChange={(e) => updateEntry(index, 'location', e.target.value)} placeholder="123 Street St" />
+                            </div>
 
-                        <button type="button" onClick={() => setEntries([...entries, { title: '', date: new Date(), time: '11:00 AM - 2:00 PM', location: '', social_link: '', menu_link: '' }])} style={{ width: '100%', padding: '10px', border: '2px dashed #ddd', background: 'none', borderRadius: '8px', cursor: 'pointer', marginBottom: '20px' }}>
-                            <Plus size={18} style={{ marginRight: '8px', verticalAlign: 'middle' }} /> Add Blank Day
-                        </button>
-                    </div>
+                            <div style={{ width: '140px' }}>
+                                <label style={{ fontSize: '11px', textTransform: 'uppercase', color: '#888' }}>Date</label>
+                                <DatePicker selected={entry.date} onChange={(d) => updateEntry(index, 'date', d)} dateFormat="MMM d" className="compact-date" />
+                            </div>
 
-                    <div style={{ paddingTop: '10px', borderTop: '1px solid #eee' }}>
-                        {loading && <p className="status-message">Saving {entries.length} schedules...</p>}
-                        {error && <p className="status-message error">{error}</p>}
-                        {success && <p className="status-message success">All schedules added!</p>}
+                            <div style={{ width: '150px' }}>
+                                <label style={{ fontSize: '11px', textTransform: 'uppercase', color: '#888' }}>Time</label>
+                                <input value={entry.time} onChange={(e) => updateEntry(index, 'time', e.target.value)} />
+                            </div>
 
-                        <button type="submit" className="button submit-button" disabled={loading || success}>
-                            <Save size={18} style={{ marginRight: '8px' }}/> 
-                            {loading ? 'Submitting...' : `Publish ${entries.length} Schedules`}
-                        </button>
-                    </div>
-                </form>
+                            {/* Action Buttons (The Calendly Icons) */}
+                            <div style={{ display: 'flex', gap: '5px', paddingBottom: '5px' }}>
+                                <button type="button" onClick={() => saveSingleRow(index)} title="Save this row" style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', color: entry.saved ? '#4ade80' : '#888' }}>
+                                    {entry.saved ? <CheckCircle size={18} /> : <Save size={18} />}
+                                </button>
+                                <button type="button" onClick={() => duplicateEntry(index, 1)} title="Clone +1 Day" style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer' }}><Copy size={18} /></button>
+                                <button type="button" onClick={() => duplicateEntry(index, 7)} title="Weekly Repeat" style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer' }}><CalendarDays size={18} /></button>
+                                {entries.length > 1 && (
+                                    <button type="button" onClick={() => removeEntry(index)} style={{ padding: '8px', border: 'none', borderRadius: '4px', cursor: 'pointer', color: '#ff4d4d' }}><Trash2 size={18} /></button>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+
+                    <button type="button" onClick={() => setEntries([...entries, { title: '', date: new Date(), time: '11:00 AM - 2:00 PM', location: '', social_link: '', menu_link: '', saved: false }])} style={{ width: '100%', padding: '12px', border: '1px dashed #bbb', background: 'none', borderRadius: '8px', cursor: 'pointer', color: '#666' }}>
+                        <Plus size={16} /> Add Another Entry
+                    </button>
+                </div>
+
+                {/* Footer Footer */}
+                <div style={{ padding: '20px', borderTop: '1px solid #eee', textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                     <button className="button" style={{ background: '#eee', color: '#333' }} onClick={onClose}>Done</button>
+                     <button className="button submit-button" disabled={loading} onClick={() => entries.forEach((_, i) => saveSingleRow(i))}>
+                        Publish All to Map
+                     </button>
+                </div>
+
+                <datalist id="truck-list">
+                    {Object.keys(TRUCK_DIRECTORY).map(n => <option key={n} value={n} />)}
+                </datalist>
             </div>
-            
-            <datalist id="truck-list">
-                {Object.keys(TRUCK_DIRECTORY).map(name => (
-                    <option key={name} value={name} />
-                ))}
-            </datalist>
         </div>
     );
 }
