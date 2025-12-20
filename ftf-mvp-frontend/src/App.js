@@ -22,11 +22,13 @@ function App() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [showVendorForm, setShowVendorForm] = useState(false);
+    const [visibleSchedules, setVisibleSchedules] = useState([]); // Tracks trucks currently in map view
 
     const fetchSchedules = async (date) => {
         setLoading(true);
         setError(null);
         setSelectedSchedule(null);
+        setVisibleSchedules([]); // Clear the live list while loading new date data
 
         const dateString = formatDate(date);
         const apiUrl = process.env.REACT_APP_API_URL || '/api/v1';
@@ -108,8 +110,14 @@ function App() {
                         <MapDisplay 
                             schedules={schedules} 
                             onMarkerClick={handleMarkerClick} 
+                            selectedId={selectedSchedule?.id}
+                            onBoundsChange={setVisibleSchedules} // Updates the live list as user pans
                         />
-                        <DetailPanel schedule={selectedSchedule} />
+                        <DetailPanel 
+                            schedule={selectedSchedule} 
+                            visibleSchedules={visibleSchedules} // Shows trucks in view frame
+                            onSelect={handleMarkerClick}       // Allows list clicking to select pin
+                        />
                     </>
                 )}
             </main>

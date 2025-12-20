@@ -1,57 +1,51 @@
 // src/components/MapDisplay.js
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { GoogleMap, OverlayView, useLoadScript } from '@react-google-maps/api';
 import { Truck } from 'lucide-react';
 
-const defaultCenter = {
-    lat: 41.1400,
-    lng: -104.8200
-};
+const defaultCenter = { lat: 41.1400, lng: -104.8200 };
+const containerStyle = { width: '100%', height: '100%' };
 
-const containerStyle = {
-    width: '100%',
-    height: '100%',
-};
-
-const mapOptions = {
-    disableDefaultUI: true,
-    zoomControl: true,
-    clickableIcons: false, 
-};
-
-function MapDisplay({ schedules, onMarkerClick, selectedId }) {
+function MapDisplay({ schedules, onMarkerClick, selectedId, onBoundsChange }) {
     const { isLoaded, loadError } = useLoadScript({
         googleMapsApiKey: process.env.REACT_APP_MAPS_KEY,
         libraries: ['places'],
     });
 
-    const mapRef = React.useRef(null);
-    const onLoad = useCallback(function callback(map) {
-        mapRef.current = map;
-    }, []);
+    const mapRef = useRef(null);
 
-    if (loadError) return <div className="status-message">Error loading maps</div>;
-    if (!isLoaded) return <div className="status-message">Loading Map...</div>;
+    // This function checks which trucks are inside the current map window
+    const handleIdle = () => {
+        if (!mapRef.current || !onBoundsChange) return;
+        
+        const bounds = mapRef.current.getBounds();
+        if (!bounds) return;
+
+        const visible = schedules.filter(s => 
+            bounds.contains({ lat: Number(s.latitude), lng: Number(s.longitude) })
+        );
+        
+        onBoundsChange(visible);
+    };
+
+    if (loadError) return <div>Error loading maps</div>;
+    if (!isLoaded) return <div>Loading...</div>;
 
     return (
-        <div style={{ flex: 1, minHeight: '500px', backgroundColor: '#e6e6e6' }}>
+        <div style={{ flex: 1, minHeight: '500px' }}>
             <GoogleMap
                 mapContainerStyle={containerStyle}
                 center={defaultCenter}
                 zoom={14}
-                options={mapOptions}
-                onLoad={onLoad}
+                onLoad={(map) => { mapRef.current = map; }}
+                onIdle={handleIdle} // Triggers whenever the user pans or zooms
             >
                 {schedules.map(schedule => (
                     <OverlayView
                         key={schedule.id}
-                        position={{ 
-                            lat: Number(schedule.latitude), 
-                            lng: Number(schedule.longitude) 
-                        }}
+                        position={{ lat: Number(schedule.latitude), lng: Number(schedule.longitude) }}
                         mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
                     >
-                        {/* THE NIFTY TRUCK PIN */}
                         <div 
                             className={`custom-truck-pin ${selectedId === schedule.id ? 'selected' : ''}`}
                             onClick={() => onMarkerClick(schedule)}
