@@ -3,8 +3,29 @@ import React, { useCallback, useRef } from 'react';
 import { GoogleMap, OverlayView, useLoadScript } from '@react-google-maps/api';
 import { Truck } from 'lucide-react';
 
-const defaultCenter = { lat: 41.1400, lng: -104.8200 };
-const containerStyle = { width: '100%', height: '100%' };
+const defaultCenter = {
+    lat: 41.1400,
+    lng: -104.8200
+};
+
+const containerStyle = {
+    width: '100%',
+    height: '100%',
+};
+
+// UPDATED: Added styles to hide business popups and POI labels
+const mapOptions = {
+    disableDefaultUI: true,
+    zoomControl: true,
+    clickableIcons: false, 
+    styles: [
+        {
+            featureType: "poi",
+            elementType: "labels",
+            stylers: [{ visibility: "off" }]
+        }
+    ]
+};
 
 function MapDisplay({ schedules, onMarkerClick, selectedId, onBoundsChange }) {
     const { isLoaded, loadError } = useLoadScript({
@@ -14,13 +35,15 @@ function MapDisplay({ schedules, onMarkerClick, selectedId, onBoundsChange }) {
 
     const mapRef = useRef(null);
 
-    // This function checks which trucks are inside the current map window
+    // This solves the incorrect truck count. 
+    // It only triggers when the map finishes moving/zooming.
     const handleIdle = () => {
         if (!mapRef.current || !onBoundsChange) return;
         
         const bounds = mapRef.current.getBounds();
         if (!bounds) return;
 
+        // Filter ONLY the trucks physically inside the user's current view
         const visible = schedules.filter(s => 
             bounds.contains({ lat: Number(s.latitude), lng: Number(s.longitude) })
         );
@@ -28,22 +51,26 @@ function MapDisplay({ schedules, onMarkerClick, selectedId, onBoundsChange }) {
         onBoundsChange(visible);
     };
 
-    if (loadError) return <div>Error loading maps</div>;
-    if (!isLoaded) return <div>Loading...</div>;
+    if (loadError) return <div className="status-message">Error loading maps</div>;
+    if (!isLoaded) return <div className="status-message">Loading Map...</div>;
 
     return (
-        <div style={{ flex: 1, minHeight: '500px' }}>
+        <div style={{ flex: 1, minHeight: '500px', backgroundColor: '#e6e6e6' }}>
             <GoogleMap
                 mapContainerStyle={containerStyle}
                 center={defaultCenter}
                 zoom={14}
+                options={mapOptions}
                 onLoad={(map) => { mapRef.current = map; }}
-                onIdle={handleIdle} // Triggers whenever the user pans or zooms
+                onIdle={handleIdle} // Trigger logic to update the right-side list
             >
                 {schedules.map(schedule => (
                     <OverlayView
                         key={schedule.id}
-                        position={{ lat: Number(schedule.latitude), lng: Number(schedule.longitude) }}
+                        position={{ 
+                            lat: Number(schedule.latitude), 
+                            lng: Number(schedule.longitude) 
+                        }}
                         mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
                     >
                         <div 

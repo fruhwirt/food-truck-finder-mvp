@@ -25,10 +25,10 @@ function App() {
     const [visibleSchedules, setVisibleSchedules] = useState([]); // Tracks trucks currently in map view
 
     const fetchSchedules = async (date) => {
-        setLoading(true);
-        setError(null);
-        setSelectedSchedule(null);
-        setVisibleSchedules([]); // Clear the live list while loading new date data
+    	setLoading(true);
+    	setError(null);
+    	setSelectedSchedule(null);
+    	setVisibleSchedules([]);
 
         const dateString = formatDate(date);
         const apiUrl = process.env.REACT_APP_API_URL || '/api/v1';
